@@ -7,10 +7,11 @@ import numpy as np
 warnings.filterwarnings("ignore")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from games import half_video_blocks, source_frames  # noqa: E402
+from games import GAMES, half_video_blocks, source_frames  # noqa: E402
 from . import atd  # noqa: E402
 from .features import frame_features  # noqa: E402
 from .idsse import MATCHES  # noqa: E402
+from .kickoff import dead_before_kickoff  # noqa: E402
 from .model import game_xy, fit, predict, viterbi, target_masks  # noqa: E402
 
 TRAIN = [1, 2, 3] + list(MATCHES)
@@ -36,6 +37,8 @@ def main(out):
     labels = np.full(n, "X", dtype="<U1")
     for _, a, b in half_video_blocks("BAR-ATH"):
         labels[a:b + 1] = np.array(["H", "A", "D"])[viterbi(P[a:b + 1], ALPHA, P_SWITCH, P_DEAD)]
+    # Law 8: nothing is in play before a half's kickoff, which the second block opens ~2 min ahead of.
+    labels = dead_before_kickoff(labels, d, half_video_blocks("BAR-ATH"), GAMES["BAR-ATH"]["pitch"])
     with open(out, "w", newline="\n") as f:
         f.write("frame,label\n")
         f.writelines(f"{i},{l}\n" for i, l in enumerate(labels))
