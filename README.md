@@ -1,3 +1,7 @@
+> **Team BecaData — submission.** Code in [`possession/`](possession/), method and reproduction in
+> [`BecaData.md`](BecaData.md), submitted file in [`submission/BecaData.csv`](submission/BecaData.csv).
+> Regenerate it with `python -m possession.run --out submission/BecaData.csv`.
+
 # More than a Hack 2027 — Phase 1: Ball Possession
 
 **Organised by [Metrica Sports](https://metrica-sports.com), [FC Barcelona](https://www.fcbarcelona.com)

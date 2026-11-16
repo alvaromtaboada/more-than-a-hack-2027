@@ -1,0 +1,6 @@
+# Exact environment used to produce the submission (Python 3.13.3, Windows 11, CPU only).
+numpy==2.5.5
+pandas==3.1.1
+scipy==1.18.1
+scikit-learn==1.9.1
+kloppy==3.18.0
