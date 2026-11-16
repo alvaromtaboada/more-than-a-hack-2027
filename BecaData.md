@@ -55,6 +55,11 @@ missing on 41% of graded frames and about 1.5 players missing per frame. During 
 - **Tried and rejected:** a second-stage temporal stacking model. It looked better in CV, but
   the gain came from ball visibility, a cue that does not transfer to BAR-ATH (see §1.2). Once
   that cue was removed it was worse than stage 1 alone (0.498 vs 0.518).
+- **Also tried and rejected** (judged on held-out Metrica games with their original labels):
+  - *harmonising the IDSSE labels to controlled possession*, where a team spell shorter than 1 s is
+    given back to the previous owner (`MTAH_HARM=25`): 0.5600 vs 0.5597;
+  - *a minimum-duration Viterbi* with k = 6–38 frames (`viterbi_md`): 0.553–0.560.
+  Neither beats the noise band, so the submitted configuration keeps both off.
 
 ## 4. Possession rules implemented
 

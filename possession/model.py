@@ -43,6 +43,8 @@ def game_xy(game, rng, ball_missing):
     import pandas as pd
     d = external.load(game) if isinstance(game, int) else idsse.load(game)
     d = augment(d, rng, ball_missing)   # always consume rng so cached/uncached runs agree
+    if not isinstance(game, int):
+        d["label"] = idsse.harmonize(d["label"], int(os.environ.get("MTAH_HARM", 0)))
     cache = os.path.join(ROOT, "cache", f"feat_{'sample' if isinstance(game, int) else ''}{game}.pkl")
     if os.path.exists(cache):
         return pd.read_pickle(cache), d["label"]
@@ -173,3 +175,39 @@ def predict2(m, F):
     pdd = 0.5 * (m["dead"].predict_proba(F[m["dcols"]])[:, 1] + m["dead"].predict_proba(Fs[m["dcols"]])[:, 1])
     ph = 0.5 * (m["team"].predict_proba(F)[:, 0] + m["team"].predict_proba(Fs)[:, 1])
     return np.stack([(1 - pdd) * ph, (1 - pdd) * (1 - ph), pdd], 1)
+
+
+def viterbi_md(P, alpha=0.5, p_switch=0.01, p_dead=0.0015, k=0, eps=1e-4):
+    """Viterbi where a team spell must last >= k frames before it can end (chain of k sub-states)."""
+    if k <= 1:
+        return viterbi(P, alpha, p_switch, p_dead, eps)
+    logE = alpha * np.log(np.clip(P, eps, 1))
+    n = len(P); S = 2 * k + 1; D = 2 * k
+    lsw, ld, lstay = np.log(p_switch), np.log(p_dead), np.log(1 - p_switch - p_dead)
+    ldd, lda = np.log(1 - 2 * p_dead), np.log(p_dead)
+    emit_idx = np.array([0] * k + [1] * k + [2])
+    back = np.zeros((n, S), np.int16)
+    s = np.full(S, -np.inf); s[0] = logE[0, 0]; s[k] = logE[0, 1]; s[D] = logE[0, 2]
+    for t in range(1, n):
+        new = np.full(S, -np.inf); bp = np.zeros(S, np.int16)
+        for team in (0, 1):
+            b = team * k; o = (1 - team) * k
+            # advance inside the chain
+            new[b + 1:b + k] = s[b:b + k - 1]; bp[b + 1:b + k] = np.arange(b, b + k - 1)
+            # last sub-state: stay
+            cand = [(s[b + k - 1] + lstay, b + k - 1)]
+            if k == 1:
+                pass
+            new[b + k - 1], bp[b + k - 1] = max(cand + [(new[b + k - 1], bp[b + k - 1])]) if k > 1 else cand[0]
+            # entry: from the other team's mature state, or from dead
+            e = [(s[o + k - 1] + lsw, o + k - 1), (s[D] + lda, D)]
+            v, j = max(e)
+            new[b], bp[b] = v, j
+        dv = [(s[D] + ldd, D), (s[k - 1] + ld, k - 1), (s[2 * k - 1] + ld, 2 * k - 1)]
+        new[D], bp[D] = max(dv)
+        back[t] = bp
+        s = new + logE[t, emit_idx]
+    path = np.zeros(n, np.int16); path[-1] = int(np.argmax(s))
+    for t in range(n - 1, 0, -1):
+        path[t - 1] = back[t, path[t]]
+    return emit_idx[path].astype(np.int8)

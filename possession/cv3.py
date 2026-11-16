@@ -17,7 +17,7 @@ for fold in FOLDS:
     M = fit([data[h][0] for h in tr], [data[h][1] for h in tr])
     for g in fold:
         probs[g] = predict(M, data[g][0])
-pickle.dump((probs, {g: data[g][1] for g in GAMES}), open(os.path.join("cache", f"cv3_{only}_{os.environ.get('MTAH_ITER',300)}_{os.environ.get('MTAH_LEAVES',31)}.pkl"), "wb"))
+pickle.dump((probs, {g: data[g][1] for g in GAMES}), open(os.path.join("cache", f"cv3_{only}_{os.environ.get('MTAH_ITER',300)}_{os.environ.get('MTAH_LEAVES',31)}_h{os.environ.get('MTAH_HARM',0)}.pkl"), "wb"))
 for a, ps, pdd in itertools.product((0.3, 0.5, 0.8), (0.004, 0.01), (0.0015,)):
     r = {g: score(data[g][1], viterbi(probs[g], a, ps, pdd)) for g in GAMES}
     met = np.mean([r[g]["spell"] for g in (1, 2, 3)]); dfl = np.mean([r[g]["spell"] for g in MATCHES])

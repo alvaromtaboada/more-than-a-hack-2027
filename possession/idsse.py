@@ -41,6 +41,26 @@ def _parse(match):
     return home, tracks
 
 
+def harmonize(label, min_frames):
+    """Controlled possession: a team run shorter than min_frames inside live play (a touch, a
+    deflection) is given back to the team that had the ball before it."""
+    lab = label.copy()
+    if min_frames <= 0:
+        return lab
+    edges = np.flatnonzero(np.diff(lab) != 0) + 1
+    starts = np.concatenate(([0], edges)); stops = np.concatenate((edges, [len(lab)]))
+    prev = -1
+    for a, b in zip(starts, stops):
+        v = lab[a]
+        if v in (0, 1):
+            if prev in (0, 1) and v != prev and b - a < min_frames:
+                lab[a:b] = prev; v = prev
+            prev = v
+        else:
+            prev = -1 if v == 2 else prev
+    return lab
+
+
 def load(match):
     os.makedirs(CACHE, exist_ok=True)
     cache = os.path.join(CACHE, f"idsse_{match}.npz")
