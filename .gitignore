@@ -63,3 +63,6 @@ venv/
 env/
 .DS_Store
 cache/
+
+# -- our submission file: delivered through the form, not the public repo --
+submission/*.csv
